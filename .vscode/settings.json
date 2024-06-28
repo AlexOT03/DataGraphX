@@ -1,13 +1,11 @@
 {
     "cSpell.words": [
-        "flet",
-        "ODBC",
-        "pyodbc",
         "allvals",
         "arange",
         "autopct",
         "autotexts",
         "cmap",
+        "Connetion",
         "expansionpanel",
         "figsize",
         "flet",
@@ -16,6 +14,7 @@
         "kaleido",
         "linewidth",
         "ODBC",
+        "parametro",
         "Percap",
         "plotly",
         "pyodbc",

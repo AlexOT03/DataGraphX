@@ -10,18 +10,19 @@ import re
 
 matplotlib.use("svg")
 
-def extract_queries(sql_text) -> list:
-    # Expresión regular para encontrar consultas que comienzan con SELECT y terminan con ;
+async def extract_queries(sql_text) -> list:
     pattern = re.compile(r'(?i)(SELECT.*?;)', re.DOTALL)
     queries = pattern.findall(sql_text)
-    return queries
+    
+    queries_list = [{'id': i + 1, 'query': query} for i, query in enumerate(queries)]
+    return queries_list
 
-def print_queries(doc:str) -> list:
-    with open(doc, 'r') as myfile:
+async def print_queries(src:str) -> list:
+    with open(src, 'r') as myfile:
         data = myfile.read()
 
         # Extraer las consultas
-        queries_list:list = extract_queries(data)
+        queries_list:list = await extract_queries(data)
 
         return queries_list
 
@@ -110,7 +111,7 @@ async def main(page: ft.Page):
 
 
     panel_list = ft.ExpansionPanelList(
-        elevation=8,
+        elevation=5,
     )
     dropdown_driver:ft.Dropdown = ft.Dropdown(
         label="Driver", 
@@ -157,6 +158,18 @@ async def main(page: ft.Page):
 
     def route_change(e: ft.RouteChangeEvent) -> None:
         page.views.clear()
+
+        _page = e.route.split("?")[0]
+        queries = e.route.split("?")[1:]
+
+        data:dict = {}
+
+        for item in queries:
+            key = item.split("=")[0]
+            value = item.split("=")[1]
+            data[key] = value.replace("+", " ")
+
+
         page.views.append(
             ft.View(
                 route="/",
@@ -176,36 +189,38 @@ async def main(page: ft.Page):
                                 controls=[
                                     ft.Text("List of query to view data"),
                                     ft.Container(
-                                        content=ft.Column(
-                                            controls=[
-                                                panel_list,
-                                            ],
-                                        ),
+                                        content=panel_list,
+                                        padding=ft.padding.only(top=5, right=5, bottom=10, left=5),
                                     ),
+                                    # panel_list,
                                 ],
+                                scroll=ft.ScrollMode.ADAPTIVE,
                                 expand=True,
                             ),
                         ],
+                        expand=True,
                     ),
                 ],
             ),
         )
 
-        if page.route == "/login":
+        if _page == "/login":
             page.views.append(
                 ft.View(
                     route="/login",
                     controls=[
                         ft.Row(
                             controls=[
-                                ft.Text(value="DataGraphX", size=40),
+                                ft.Text(value="DataGraphX", theme_style=ft.TextThemeStyle.DISPLAY_LARGE),
                                 ft.Image(src="./assets/icon.png", width=50, height=50, fit=ft.ImageFit.CONTAIN),
                             ],
+                            expand=True,
                             alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         ft.Container(
                             ft.Column(
                                 controls=[
+                                    ft.Divider(),
                                     dropdown_driver,
                                     text_server,
                                     checkbox_windows_auth,
@@ -221,22 +236,20 @@ async def main(page: ft.Page):
                                         alignment=ft.MainAxisAlignment.END,
                                     ),
                                 ],
-                                
+                                alignment=ft.MainAxisAlignment.CENTER,
                             ),
-                            padding=20,
-                            margin=20,
-                            border_radius=10,
+                            padding=ft.padding.only(top=20, right=180, bottom=20, left=180),
                         ),
                     ],
                 ),
             )
 
-        if page.route == "/details":
+        if _page == "/details":
             chart1 = bar_chart("test")
             chart2 = pie_chart("test")
             chart3 = area_chart("test")
 
-            query = query_list[0]
+            query = query_list[int(data['query_id'])-1]
 
             page.views.append(
                 ft.View(
@@ -249,7 +262,7 @@ async def main(page: ft.Page):
                                     controls=[
                                         ft.Text(value="Query structure"),
                                         ft.Markdown(
-                                            value=f"```console\n {query} \n```",
+                                            value=f"```console\n {query['query']} \n```",
                                             selectable=True,
                                             extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
                                             on_tap_link=lambda e: page.launch_url(e.data),
@@ -264,7 +277,7 @@ async def main(page: ft.Page):
                                             animation_duration=300,
                                             tabs=[
                                                 ft.Tab(
-                                                    text="BarChart",
+                                                    text="Bar Chart",
                                                     icon=ft.icons.BAR_CHART,
                                                     content=ft.Column(
                                                         controls=[
@@ -397,18 +410,17 @@ async def main(page: ft.Page):
         top_view = page.views[-1]
         page.go(top_view.route)
     
-    query_list = print_queries('assets/test.sql')
+    query_list:list = await print_queries(src='assets/test.sql')
 
-    for id in range(len(query_list)):
+    for query in query_list:
         exp = ft.ExpansionPanel(
-            header=ft.ListTile(title=ft.Text(f"Query {id+1}")),
-            expand=True if id == 0 else False,
+            header=ft.ListTile(title=ft.Text(f"SQL query number {query['id']}")),
         )
 
         exp.content = ft.ListTile(
-            title=ft.Text(f"This is in Panel {id+1}"),
-            subtitle=ft.Text(f"Press the icon to go to full view of the query {id+1}, the real id is {id}"),
-            trailing=ft.IconButton(ft.icons.QUERY_STATS, on_click=lambda _: page.go("/details")),
+            title=ft.Text(f"This is in Panel {query['id']}"),
+            subtitle=ft.Text(f"Press the icon to go to full view of the query {query['id']}"),
+            trailing=ft.IconButton(ft.icons.QUERY_STATS, on_click=lambda _, q_id=query['id']: page.go("/details", query_id=q_id)),
         )
 
         panel_list.controls.append(exp)
