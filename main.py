@@ -6,7 +6,24 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
+import re
+
 matplotlib.use("svg")
+
+def extract_queries(sql_text) -> list:
+    # Expresión regular para encontrar consultas que comienzan con SELECT y terminan con ;
+    pattern = re.compile(r'(?i)(SELECT.*?;)', re.DOTALL)
+    queries = pattern.findall(sql_text)
+    return queries
+
+def print_queries(doc:str) -> list:
+    with open(doc, 'r') as myfile:
+        data = myfile.read()
+
+        # Extraer las consultas
+        queries_list:list = extract_queries(data)
+
+        return queries_list
 
 def bar_chart(data_test):
     # make data:
@@ -89,6 +106,7 @@ async def main(page: ft.Page):
     page.title = "DataGraphX"
     page.scroll = ft.ScrollMode.ADAPTIVE
     connection:sql_server.Connection = None
+    query_list:list = []
 
 
     panel_list = ft.ExpansionPanelList(
@@ -148,7 +166,7 @@ async def main(page: ft.Page):
                         controls=[
                             ft.Column(
                                 controls=[
-                                    ft.Text("This is a col 1"),
+                                    ft.Text("Database selected"),
                                     ft.Text(f"Connetion: {connection}"),
                                     button_theme,
                                 ],
@@ -218,6 +236,8 @@ async def main(page: ft.Page):
             chart2 = pie_chart("test")
             chart3 = area_chart("test")
 
+            query = query_list[0]
+
             page.views.append(
                 ft.View(
                     route="/details",
@@ -229,7 +249,7 @@ async def main(page: ft.Page):
                                     controls=[
                                         ft.Text(value="Query structure"),
                                         ft.Markdown(
-                                            value=" # hola markdown",
+                                            value=f"```console\n {query} \n```",
                                             selectable=True,
                                             extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
                                             on_tap_link=lambda e: page.launch_url(e.data),
@@ -377,16 +397,17 @@ async def main(page: ft.Page):
         top_view = page.views[-1]
         page.go(top_view.route)
     
+    query_list = print_queries('assets/test.sql')
 
-    for i in range(5):
+    for id in range(len(query_list)):
         exp = ft.ExpansionPanel(
-            header=ft.ListTile(title=ft.Text(f"Query {i}")),
-            # expand=if i == 0: True else False,
+            header=ft.ListTile(title=ft.Text(f"Query {id+1}")),
+            expand=True if id == 0 else False,
         )
 
         exp.content = ft.ListTile(
-            title=ft.Text(f"This is in Panel {i}"),
-            subtitle=ft.Text(f"Press the icon to delete panel {i}"),
+            title=ft.Text(f"This is in Panel {id+1}"),
+            subtitle=ft.Text(f"Press the icon to go to full view of the query {id+1}, the real id is {id}"),
             trailing=ft.IconButton(ft.icons.QUERY_STATS, on_click=lambda _: page.go("/details")),
         )
 
