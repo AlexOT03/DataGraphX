@@ -181,6 +181,7 @@ async def main(page: ft.Page):
                             ft.PopupMenuButton(
                                 items=[
                                     ft.PopupMenuItem(text="Help"),
+                                    ft.PopupMenuItem(),
                                     ft.PopupMenuItem(text="Info"),
                                 ]
                             )
@@ -190,7 +191,7 @@ async def main(page: ft.Page):
                         controls=[
                             ft.Column(
                                 controls=[
-                                    ft.Text("General info", style=ft.TextThemeStyle.HEADLINE_LARGE),
+                                    ft.Text("General info", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                     ft.Row(
                                         controls=[
                                             ft.Text(f"Connetion status"), 
@@ -211,7 +212,7 @@ async def main(page: ft.Page):
                             ft.VerticalDivider(),
                             ft.Column(
                                 controls=[
-                                    ft.Text("List of query's", style=ft.TextThemeStyle.HEADLINE_LARGE),
+                                    ft.Text("List of query's", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                     ft.Container(
                                         content=panel_list,
                                         padding=ft.padding.only(top=5, right=5, bottom=10, left=5),
@@ -273,7 +274,31 @@ async def main(page: ft.Page):
             chart2 = pie_chart("test")
             chart3 = area_chart("test")
 
-            query = query_list[int(data['query_id'])-1]
+            _id = int(data['query_id'])-1
+
+            query_text = query_list[_id]
+            
+            table_data = ft.DataTable(
+                border=ft.border.all(width=1, color=ft.colors.GREY),
+                border_radius=ft.border_radius.all(5),
+                columns=[
+                    ft.DataColumn(ft.Text("First name")),
+                    ft.DataColumn(ft.Text("Last name")),
+                    ft.DataColumn(ft.Text("Age"), numeric=True),
+                ],
+            )
+
+            for i in range(_id):
+                _row = ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(f"John {i}")),
+                        ft.DataCell(ft.Text(f"Smith {i}")),
+                        ft.DataCell(ft.Text(f"43{i}")),
+                    ]
+                )
+
+                table_data.rows.append(_row)
+                page.update()
 
             page.views.append(
                 ft.View(
@@ -287,6 +312,7 @@ async def main(page: ft.Page):
                                 ft.PopupMenuButton(
                                     items=[
                                         ft.PopupMenuItem(text="Help"),
+                                        ft.PopupMenuItem(),
                                         ft.PopupMenuItem(text="Info"),
                                     ]
                                 )
@@ -296,9 +322,9 @@ async def main(page: ft.Page):
                             controls=[
                                 ft.Column(
                                     controls=[
-                                        ft.Text(value="Query structure"),
+                                        ft.Text(value="Query structure", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                         ft.Markdown(
-                                            value=f"```console\n {query['query']} \n```",
+                                            value=f"```console\n {query_text['query']} \n```",
                                             selectable=True,
                                             extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
                                             on_tap_link=lambda e: page.launch_url(e.data),
@@ -306,6 +332,7 @@ async def main(page: ft.Page):
                                     ],
                                     expand=True
                                 ),
+                                ft.VerticalDivider(),
                                 ft.Column(
                                     controls=[
                                         ft.Tabs(
@@ -348,42 +375,16 @@ async def main(page: ft.Page):
                             ],
                             expand=True,
                         ),
+                        ft.Divider(),
                         ft.Row(
                             controls=[
                                 ft.Column(
                                     controls=[
-                                        ft.Text(value="Data of the query"),
-                                        ft.DataTable(
-                                            columns=[
-                                                ft.DataColumn(ft.Text("First name")),
-                                                ft.DataColumn(ft.Text("Last name")),
-                                                ft.DataColumn(ft.Text("Age"), numeric=True),
-                                            ],
-                                            rows=[
-                                                ft.DataRow(
-                                                    cells=[
-                                                        ft.DataCell(ft.Text("John")),
-                                                        ft.DataCell(ft.Text("Smith")),
-                                                        ft.DataCell(ft.Text("43")),
-                                                    ],
-                                                ),
-                                                ft.DataRow(
-                                                    cells=[
-                                                        ft.DataCell(ft.Text("Jack")),
-                                                        ft.DataCell(ft.Text("Brown")),
-                                                        ft.DataCell(ft.Text("19")),
-                                                    ],
-                                                ),
-                                                ft.DataRow(
-                                                    cells=[
-                                                        ft.DataCell(ft.Text("Alice")),
-                                                        ft.DataCell(ft.Text("Wong")),
-                                                        ft.DataCell(ft.Text("25")),
-                                                    ],
-                                                ),
-                                            ],
-                                        ),
-                                    ]
+                                        ft.Text(value="Data of the query", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+                                        table_data,
+                                    ],
+                                    scroll=ft.ScrollMode.AUTO,
+                                    expand=True
                                 )
                             ],
                             expand=True,
@@ -430,14 +431,14 @@ async def main(page: ft.Page):
     
 
     async def submit_connection(e: ft.ControlEvent) -> None:
-        nonlocal connection
-        connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
+        # nonlocal connection
+        # connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
 
-        if connection and connection is not None:
-            page.go("/")
+        # if connection and connection is not None:
+        #     page.go("/")
         
-        else:
-            connection.close()
+        # else:
+        #     connection.close()
         page.go("/")
 
 
