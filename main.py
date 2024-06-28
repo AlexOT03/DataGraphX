@@ -103,6 +103,20 @@ def area_chart(data_test):
     return figure
 
 
+def query_data(connection:sql_server.Connection, database:str, query: str):
+    with connection.cursor() as cursor:
+        cursor.execute(f"USE {database}")
+        cursor.execute(query)
+        return cursor.fetchall()
+
+def get_headers(connection:sql_server.Connection, database:str, query: str):
+    with connection.cursor() as cursor:
+        cursor.execute(f"USE {database}")
+        cursor.execute(query)
+        headers = [columna[0] for columna in cursor.description]
+        return headers
+
+
 async def main(page: ft.Page):
     page.title = "DataGraphX"
     page.scroll = ft.ScrollMode.ADAPTIVE
@@ -275,30 +289,29 @@ async def main(page: ft.Page):
             chart3 = area_chart("test")
 
             _id = int(data['query_id'])-1
-
             query_text = query_list[_id]
+
+            _data_query:list = query_data(connection, "airbus380_acad", query_text['query'])
+            _heder_query:list = get_headers(connection, "airbus380_acad", query_text['query'])
+
+            _columns:list = []
+            for i in range(len(_heder_query)):
+                _columns.append(ft.DataColumn(ft.Text(f"{_heder_query[i]}")))
             
             table_data = ft.DataTable(
-                border=ft.border.all(width=1, color=ft.colors.GREY),
-                border_radius=ft.border_radius.all(5),
-                columns=[
-                    ft.DataColumn(ft.Text("First name")),
-                    ft.DataColumn(ft.Text("Last name")),
-                    ft.DataColumn(ft.Text("Age"), numeric=True),
-                ],
+                columns=_columns,
             )
 
-            for i in range(_id):
+            for element in _data_query:
+                _cells:list = []
+                for j in range(len(_heder_query)):
+                    _cells.append(ft.DataCell(ft.Text(f"{element[j]}")))
+
                 _row = ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(f"John {i}")),
-                        ft.DataCell(ft.Text(f"Smith {i}")),
-                        ft.DataCell(ft.Text(f"43{i}")),
-                    ]
+                    cells=_cells
                 )
 
                 table_data.rows.append(_row)
-                page.update()
 
             page.views.append(
                 ft.View(
@@ -323,11 +336,19 @@ async def main(page: ft.Page):
                                 ft.Column(
                                     controls=[
                                         ft.Text(value="Query structure", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
-                                        ft.Markdown(
-                                            value=f"```console\n {query_text['query']} \n```",
-                                            selectable=True,
-                                            extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-                                            on_tap_link=lambda e: page.launch_url(e.data),
+                                        ft.Container(
+                                            content=ft.Column(
+                                                controls=[
+                                                    ft.Markdown(
+                                                        value=f"```console\n {query_text['query']} \n```",
+                                                        selectable=True,
+                                                        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+                                                        on_tap_link=lambda e: page.launch_url(e.data),
+                                                    )
+                                                ],
+                                                scroll=ft.ScrollMode.AUTO,
+                                            ),
+                                            expand=True
                                         )
                                     ],
                                     expand=True
@@ -431,15 +452,14 @@ async def main(page: ft.Page):
     
 
     async def submit_connection(e: ft.ControlEvent) -> None:
-        # nonlocal connection
-        # connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
+        nonlocal connection
+        connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
 
-        # if connection and connection is not None:
-        #     page.go("/")
+        if connection and connection is not None:
+            page.go("/")
         
-        # else:
-        #     connection.close()
-        page.go("/")
+        else:
+            connection.close()
 
 
     def view_pop(view) -> None:
