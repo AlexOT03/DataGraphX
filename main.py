@@ -150,8 +150,7 @@ async def main(page: ft.Page):
         icon=ft.icons.HELP,
         # on_click=open_dlg_modal
     )
-    button_theme:ft.ElevatedButton = ft.ElevatedButton(
-        text="Theme",
+    button_theme:ft.IconButton = ft.IconButton(
         icon=ft.icons.LIGHT_MODE,
     )
 
@@ -174,27 +173,52 @@ async def main(page: ft.Page):
             ft.View(
                 route="/",
                 controls=[
-                    ft.AppBar(title=ft.Text("Home"), bgcolor=ft.colors.SURFACE_VARIANT),
+                    ft.AppBar(
+                        title=ft.Text("Home"), 
+                        bgcolor=ft.colors.SURFACE_VARIANT, 
+                        actions=[
+                            button_theme,
+                            ft.PopupMenuButton(
+                                items=[
+                                    ft.PopupMenuItem(text="Help"),
+                                    ft.PopupMenuItem(text="Info"),
+                                ]
+                            )
+                        ]
+                    ),
                     ft.Row(
                         controls=[
                             ft.Column(
                                 controls=[
-                                    ft.Text("Database selected"),
-                                    ft.Text(f"Connetion: {connection}"),
-                                    button_theme,
+                                    ft.Text("General info", style=ft.TextThemeStyle.HEADLINE_LARGE),
+                                    ft.Row(
+                                        controls=[
+                                            ft.Text(f"Connetion status"), 
+                                            ft.Tooltip(
+                                                message="When the connection is established, \nthe status will be green and said 'Success', \notherwise it will be red and said 'Error'",
+                                                content=ft.Container(
+                                                    content=ft.Text("Success" if connection else "Error", style=ft.TextThemeStyle.LABEL_SMALL,),
+                                                    bgcolor=ft.colors.GREEN if connection else ft.colors.RED,
+                                                    padding=ft.padding.only(top=1, right=5, bottom=1, left=5),
+                                                    border_radius=ft.border_radius.all(50)
+                                                ),
+                                            )
+                                        ]
+                                    )
                                 ],
                                 expand=True,
                             ),
+                            ft.VerticalDivider(),
                             ft.Column(
                                 controls=[
-                                    ft.Text("List of query to view data"),
+                                    ft.Text("List of query's", style=ft.TextThemeStyle.HEADLINE_LARGE),
                                     ft.Container(
                                         content=panel_list,
                                         padding=ft.padding.only(top=5, right=5, bottom=10, left=5),
                                     ),
                                     # panel_list,
                                 ],
-                                scroll=ft.ScrollMode.ADAPTIVE,
+                                scroll=ft.ScrollMode.AUTO,
                                 expand=True,
                             ),
                         ],
@@ -255,7 +279,19 @@ async def main(page: ft.Page):
                 ft.View(
                     route="/details",
                     controls=[
-                        ft.AppBar(title=ft.Text("Details"), bgcolor=ft.colors.SURFACE_VARIANT),
+                        ft.AppBar(
+                            title=ft.Text("Details"), 
+                            bgcolor=ft.colors.SURFACE_VARIANT,
+                            actions=[
+                                button_theme,
+                                ft.PopupMenuButton(
+                                    items=[
+                                        ft.PopupMenuItem(text="Help"),
+                                        ft.PopupMenuItem(text="Info"),
+                                    ]
+                                )
+                            ]
+                        ),
                         ft.Row(
                             controls=[
                                 ft.Column(
@@ -394,14 +430,14 @@ async def main(page: ft.Page):
     
 
     async def submit_connection(e: ft.ControlEvent) -> None:
-        # nonlocal connection
-        # connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
+        nonlocal connection
+        connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
 
-        # if connection and connection is not None:
-        #     page.go("/")
+        if connection and connection is not None:
+            page.go("/")
         
-        # else:
-        #     connection.close()
+        else:
+            connection.close()
         page.go("/")
 
 
