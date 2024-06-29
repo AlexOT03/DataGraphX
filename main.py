@@ -170,12 +170,47 @@ async def main(page: ft.Page):
     connection:sql_server.Connection = None
     query_list:list = []
 
-    dlg_modal = ft.AlertDialog(
+    dlg_modal_error = ft.AlertDialog(
         modal=True,
         title=ft.Text("Something went wrong"),
         content=ft.Text("The connection failed. Please check the credentials and try again."),
         actions=[
-            ft.TextButton("Ok", on_click=lambda e: page.close(dlg_modal)),
+            ft.TextButton("Ok", on_click=lambda e: page.close(dlg_modal_error)),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
+    dlg_modal_info = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("How to use this app"),
+        content=ft.Column(
+            controls=[
+                ft.Text(value="Hi!, Welcome to DataGraphX. This app is a tool to visualize the data of a SQL query. \nIn this secction you can see how to use this app. Dont worry, this app is very simple, \nyou only need check the content of this page and follow the instructions."),
+                ft.Text(value="The first step is to connect to the database. For this, you have 2 options: \n- Using the drivers available in the dropdown menu and typing the server name."),
+                ft.Image(src="assets/login1.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="- Typing the all data without check the windows auth option."),
+                ft.Image(src="assets/login2.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Divider(),
+                ft.Text(value="Now, You are in the Home page. In this you can see the status of the connection \nand the list of the queries."),
+                ft.Image(src="assets/home.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="The first panel show you the general status of the connection. If the connection \nis established, the status will be green and said 'Success', otherwise it will be \nred and said 'Error'."),
+                ft.Image(src="assets/panel-info.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="The second panel show you the list of the queries. You can click on the row icon \nto open the details of the query and after that you can click on the chart icon to \ngo to the details of the query."),
+                ft.Image(src="assets/panel-list.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Divider(),
+                ft.Text(value="In the details page, you can see the data of the query. You can see the mean, \nmedian and mode of the data. You can also see the creation time of the chart."),
+                ft.Image(src="assets/details.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="This page is divided in 3 parts. The first part is the general information of the query."),
+                ft.Image(src="assets/details-general.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="The second part is the data of the query in three diferente types of charts."),
+                ft.Image(src="assets/chart.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+                ft.Text(value="The third part is a table with the data of the query and the aditional information \n(mean, median and mode)."),
+                ft.Image(src="assets/table.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
+
+            ],
+            scroll=ft.ScrollMode.AUTO,
+        ),
+        actions=[
+            ft.TextButton("Ok", on_click=lambda e: page.close(dlg_modal_info)),
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
@@ -217,14 +252,14 @@ async def main(page: ft.Page):
     button_help:ft.ElevatedButton = ft.ElevatedButton(
         text="Help",
         icon=ft.icons.HELP,
-        # on_click=open_dlg_modal
+        on_click=lambda e: page.open(dlg_modal_info),
     )
     button_theme:ft.IconButton = ft.IconButton(
         icon=ft.icons.LIGHT_MODE,
     )
     button_info:ft.IconButton = ft.IconButton(
         icon=ft.icons.INFO,
-        on_click=lambda e: page.open(dlg_modal),
+        on_click=lambda e: page.open(dlg_modal_info),
     )
 
 
@@ -251,6 +286,7 @@ async def main(page: ft.Page):
                         bgcolor=ft.colors.SURFACE_VARIANT, 
                         actions=[
                             button_theme,
+                            button_info,
                             ft.PopupMenuButton(
                                 items=[
                                     ft.PopupMenuItem(text="Help"),
@@ -310,7 +346,7 @@ async def main(page: ft.Page):
                         ft.Row(
                             controls=[
                                 ft.Text(value="DataGraphX", theme_style=ft.TextThemeStyle.DISPLAY_LARGE),
-                                ft.Image(src="./assets/icon.png", width=50, height=50, fit=ft.ImageFit.CONTAIN),
+                                ft.Image(src="assets/icon.png", width=50, height=50, fit=ft.ImageFit.CONTAIN),
                             ],
                             alignment=ft.MainAxisAlignment.CENTER,
                             vertical_alignment=ft.VerticalAlignment.CENTER,
@@ -398,6 +434,7 @@ async def main(page: ft.Page):
                             bgcolor=ft.colors.SURFACE_VARIANT,
                             actions=[
                                 button_theme,
+                                button_info,
                                 ft.PopupMenuButton(
                                     items=[
                                         ft.PopupMenuItem(text="Help"),
@@ -572,7 +609,7 @@ async def main(page: ft.Page):
             if connection is not None:
                 connection.close()
 
-            page.open(dlg_modal)
+            page.open(dlg_modal_error)
 
 
     def view_pop(view) -> None:
@@ -612,4 +649,4 @@ async def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.app(target=main, view=ft.WEB_BROWSER)
