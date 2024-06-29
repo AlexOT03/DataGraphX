@@ -26,81 +26,120 @@ async def print_queries(src:str) -> list:
 
         return queries_list
 
-def bar_chart(data_test):
-    # make data:
-    x2 = 0.5 + np.arange(8)
-    y2 = [4.8, 5.5, 3.5, 4.6, 6.5, 6.6, 2.6, 3.0]
-    bar_labels = ["red", "blue", "_red", "orange", "yellow", "orange", "yellow", "orange"]
-    colors = ["tab:red", "tab:blue", "tab:red", "tab:orange", "tab:blue", "tab:orange", "tab:cyan", "tab:orange"]
-
-    # plot
-    figure, axles = plt.subplots()
-
-    axles.bar(x2, y2, width=1, edgecolor="white", linewidth=0.7, label=bar_labels, color=colors)
-
-    axles.set(xlim=(0, 8), xticks=np.arange(1, 8),
-           ylim=(0, 8), yticks=np.arange(1, 8))
+def bar_chart(headers, data) -> plt.Figure:
+    fig, ax = plt.subplots()
     
-    axles.set_ylabel("fruit supply")
-    axles.set_title("Fruit supply by kind and color")
-    axles.legend(title="Fruit color")
+    etiquetas_x = headers[0]
     
-    return figure
+    series_headers = headers[1:]
+    
+    etiquetas = [item[0] for item in data]
+    series = {header: [item[i + 1] for item in data] for i, header in enumerate(series_headers)}
+    
+    # Colores para las barras
+    colores = ['tab:red', 'tab:blue', 'tab:green', 'tab:orange', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
+    
+    for i, (serie, valores) in enumerate(series.items()):
+        ax.bar(etiquetas, valores, label=serie, color=colores[i % len(colores)])
+    
+    # Configurar etiquetas y título
+    ax.set_ylabel('Valores')
+    ax.set_title('Gráfica de Barras')
+    ax.legend(title='Series')
+    
+    return fig
 
 
-def pie_chart(data_test):
+def pie_chart(headers, data):
+    fig, ax = plt.subplots()
+    if len(headers) < 2:
+        raise ValueError("headers debe contener al menos dos elementos.")
+    
+    # Usar el primer header como etiquetas del pastel
+    etiquetas = headers[0]
+    
+    # El segundo header como valores
+    valores = headers[1]
+    
+    # Extraer los datos y filtrar los no convertibles a float
+    etiquetas_pastel = []
+    valores_pastel = []
+    
+    for item in data:
+        try:
+            valor = float(item[1])
+            etiquetas_pastel.append(item[0])
+            valores_pastel.append(valor)
+        except ValueError:
+            return
+    
+    if not valores_pastel:
+        return
+    
+    
     def func(pct, allvals):
-        absolute = int(np.round(pct/100.*np.sum(allvals)))
-        return f"{pct:.1f}%\n({absolute:d} g)"
+        absolute = int(np.round(pct / 100. * np.sum(allvals)))
+        return f"{pct:.1f}%\n({absolute:d})"
 
-    figure, ax = plt.subplots()
-
-    recipe = ["375 g flour",
-              "75 g sugar",
-              "250 g butter",
-              "300 g berries"]
-
-    data = [float(x.split()[0]) for x in recipe]
-    ingredients = [x.split()[-1] for x in recipe]
-
-    wedges, texts, autotexts = ax.pie(data, autopct=lambda pct: func(pct, data),
-                                  textprops=dict(color="w"))
-
-    ax.legend(wedges, ingredients,
-              title="Ingredients",
+    
+    wedges, texts, autotexts = ax.pie(valores_pastel, autopct=lambda pct: func(pct, valores_pastel),
+                                      textprops=dict(color="w"))
+    
+    ax.legend(wedges, etiquetas_pastel,
+              title=etiquetas,
               loc="center left",
               bbox_to_anchor=(1, 0, 0.5, 1))
-
+    
     plt.setp(autotexts, size=8, weight="bold")
-
-    ax.set_title("Matplotlib bakery: A pie")
+    
+    ax.set_title(f'Gráfica de {valores} por {etiquetas}')
     
     
-    return figure
+    return fig
 
 
-def area_chart(data_test):
-    # make data
-    year = [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2018]
-    population_by_continent = {
-        'Africa': [.228, .284, .365, .477, .631, .814, 1.044, 1.275],
-        'the Americas': [.340, .425, .519, .619, .727, .840, .943, 1.006],
-        'Asia': [1.394, 1.686, 2.120, 2.625, 3.202, 3.714, 4.169, 4.560],
-        'Europe': [.220, .253, .276, .295, .310, .303, .294, .293],
-        'Oceania': [.012, .015, .019, .022, .026, .031, .036, .039],
-    }
+def ssid_chart(headers, data):
     
-    # plot
-    figure, axles = plt.subplots()
+    if len(headers) < 2:
+        raise ValueError("headers debe contener al menos dos elementos.")
     
-    axles.stackplot(year, population_by_continent.values(),
-             labels=population_by_continent.keys(), alpha=0.8)
-    axles.legend(loc='upper left', reverse=True)
-    axles.set_title('World population')
-    axles.set_xlabel('Year')
-    axles.set_ylabel('Number of people (billions)')
+    if any(len(item) < 2 for item in data):
+        raise ValueError("Cada fila de datos debe tener al menos dos elementos.")
+    
+    # Determinar si los valores tienen dos o tres elementos
+    is_extended_format = len(data[0]) == 3
 
-    return figure
+    # Usar el primer header como etiquetas del eje x
+    eje_x_header = headers[0]
+    
+    # Usar el segundo header como valores de la serie
+    serie_header = headers[1]
+    
+    # Extraer los datos
+    if is_extended_format:
+        eje_x_labels = [f'{item[0]} {item[1]}' for item in data]
+        serie = [item[2] for item in data]
+    else:
+        eje_x_labels = [item[0] for item in data]
+        serie = [item[1] for item in data]
+
+    # Crear la gráfica
+    fig, ax = plt.subplots()
+    ax.stairs(serie, linewidth=2.5)
+    
+    # Agregar etiquetas a cada punto
+    for i, (label, y) in enumerate(zip(eje_x_labels, serie)):
+        ax.text(i, y, f'{y}', ha='center', va='bottom')
+
+    ax.set_title(f"Gráfica de Escalones ({serie_header})")
+    ax.set_xlabel(eje_x_header)
+    ax.set_xticks(range(len(eje_x_labels)))
+    ax.set_xticklabels(eje_x_labels, rotation=45, ha='right')
+    ax.set_xlim(-0.5, len(serie) - 0.5)
+    ax.set_ylim(0, max(serie) + 1)
+    ax.set_yticks(np.arange(1, max(serie) + 1))
+
+    return fig
 
 
 def query_data(connection:sql_server.Connection, database:str, query: str):
@@ -284,9 +323,6 @@ async def main(page: ft.Page):
             )
 
         if _page == "/details":
-            chart1 = bar_chart("test")
-            chart2 = pie_chart("test")
-            chart3 = area_chart("test")
 
             _id = int(data['query_id'])-1
             query_text = query_list[_id]
@@ -312,6 +348,10 @@ async def main(page: ft.Page):
                 )
 
                 table_data.rows.append(_row)
+
+            chart1 = bar_chart(_heder_query, _data_query)
+            # chart2 = pie_chart(_heder_query, _data_query)
+            # chart3 = ssid_chart(_heder_query, _data_query)
 
             page.views.append(
                 ft.View(
@@ -374,16 +414,16 @@ async def main(page: ft.Page):
                                                     icon=ft.icons.PIE_CHART,
                                                     content=ft.Column(
                                                         controls=[
-                                                            MatplotlibChart(chart2, expand=True)
+                                                            # MatplotlibChart(chart2, expand=True)
                                                         ]
                                                     ),
                                                 ),
                                                 ft.Tab(
                                                     text="Area Chart",
-                                                    icon=ft.icons.AREA_CHART,
+                                                    icon=ft.icons.SSID_CHART,
                                                     content=ft.Column(
                                                         controls=[
-                                                            MatplotlibChart(chart3, expand=True)
+                                                            # MatplotlibChart(chart3, expand=True)
                                                         ]
                                                     ),
                                                 ),
