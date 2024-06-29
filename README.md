@@ -58,9 +58,9 @@ python main.py
 
 ## Galería de Imágenes
 
-![Captura de Pantalla 1](assets\login.png)D
-![Captura de Pantalla 1](assets\home.png)D
-![Captura de Pantalla 1](assets\details.png)
+![Captura de Pantalla 1](https://github.com/AlexOT03/DataGraphX/blob/main/assets/login.png)
+![Captura de Pantalla 1](https://github.com/AlexOT03/DataGraphX/blob/main/assets/home.png)
+![Captura de Pantalla 1](https://github.com/AlexOT03/DataGraphX/blob/main/assets/details.png)
 
 
 ## Contribuciones

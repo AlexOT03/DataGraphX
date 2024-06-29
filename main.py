@@ -179,12 +179,23 @@ async def main(page: ft.Page):
         ],
         actions_alignment=ft.MainAxisAlignment.END,
     )
+    btn_repo = ft.ElevatedButton(
+        text="Github Repository Readme File",
+        icon=ft.icons.WEB,
+        on_click=lambda e: page.launch_url("https://github.com/AlexOT03/DataGraphX/blob/main/README.md"),
+    )
     dlg_modal_info = ft.AlertDialog(
         modal=True,
         title=ft.Text("How to use this app"),
         content=ft.Column(
             controls=[
                 ft.Text(value="Hi!, Welcome to DataGraphX. This app is a tool to visualize the data of a SQL query. \nIn this secction you can see how to use this app. Dont worry, this app is very simple, \nyou only need check the content of this page and follow the instructions."),
+                ft.Row(
+                    controls=[
+                        ft.Text(value="For more information, you can check the: "),
+                        btn_repo
+                    ]
+                ),
                 ft.Text(value="The first step is to connect to the database. For this, you have 2 options: \n- Using the drivers available in the dropdown menu and typing the server name."),
                 ft.Image(src="assets/login1.png", width=300, height=200, fit=ft.ImageFit.CONTAIN),
                 ft.Text(value="- Typing the all data without check the windows auth option."),
