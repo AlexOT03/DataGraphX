@@ -27,8 +27,7 @@ async def print_queries(src:str) -> list:
         return queries_list
 
 
-def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
-
+def bar_chart(headers: list, data: list) -> plt.Figure:
     fig, ax = plt.subplots()
     bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
@@ -37,28 +36,40 @@ def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
 
     ax.bar(x_header, y_data, color=bar_colors[:len(headers)])
 
+    ax.set_xlabel(f'{headers[0]}')
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
 
+    # Configura los ticks en el eje x
+    ax.set_xticks(np.arange(len(x_header)))
+
+    # Rotar los labels del eje x en 45 grados
+    ax.set_xticklabels(x_header, rotation=45, ha='right')
+
     return fig
 
 
-def pie_chart(headers:list, data:list, type:list) -> plt.Figure:
+def pie_chart(headers:list, data:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
-    bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
-    x_header = np.array([element[0] for element in data])
+    labels = [element[0] for element in data]
     y_data = np.array([element[-1] for element in data])
 
-    ax.pie(y_data, labels=x_header)
+    total = sum(y_data)
+    percentages = [round((value / total) * 100, 1) for value in y_data]
 
-    ax.set_title(f'{headers[-1]} by {headers[0]}')
+    wedge_patches, texts, autotexts = ax.pie(
+        y_data, labels=labels, autopct=lambda pct: f"{pct:.1f}%"
+    )
+    
+    ax.set_title(f"{headers[-1]} by {headers[0]}")
+    plt.setp(autotexts, size=8, weight="bold")
 
     return fig
 
 
-def line_chart(headers:list, data:list, type:list) -> plt.Figure:
+def line_chart(headers:list, data:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
 
@@ -67,8 +78,15 @@ def line_chart(headers:list, data:list, type:list) -> plt.Figure:
 
     ax.plot(x_header, y_data)
 
+    ax.set_xlabel(f'{headers[0]}')
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
+
+    # Configura los ticks en el eje x
+    ax.set_xticks(np.arange(len(x_header)))
+
+    # Rotar los labels del eje x en 45 grados
+    ax.set_xticklabels(x_header, rotation=45, ha='right')
 
     return fig
 
@@ -291,6 +309,10 @@ async def main(page: ft.Page):
             _id = int(data['query_id'])-1
             query_text = query_list[_id]
 
+            mean:list = []
+            median:list = []
+            mode:list = []
+
             _heder_query, _data_query, _data_type = get_data_type_headers(connection, "airbus380_acad", query_text['query'])
 
             _columns:list = []
@@ -302,6 +324,10 @@ async def main(page: ft.Page):
             )
 
             for element in _data_query:
+                mean.append(element[-1])
+                median.append(element[-1])
+                mode.append(element[-1])
+
                 _cells:list = []
                 for j in range(len(_heder_query)):
                     _cells.append(ft.DataCell(ft.Text(f"{element[j]}")))
@@ -311,23 +337,18 @@ async def main(page: ft.Page):
                 )
 
                 table_data.rows.append(_row)
-            
-            mean:list = []
-            median:list = []
-            mode:list = []
 
-            for element in _data_query:
-                mean.append(element[-1])
-                median.append(element[-1])
-                mode.append(element[-1])
-            
+
             _mean = calculate_mean(mean)
             _median = calculate_median(median)
             _mode = calculate_mode(mode)
 
-            chart1 = bar_chart(_heder_query, _data_query, _data_type)
-            chart2 = pie_chart(_heder_query, _data_query, _data_type)
-            chart3 = line_chart(_heder_query, _data_query, _data_type)
+            chart1 = bar_chart(_heder_query, _data_query)
+            plt.close(chart1)
+            chart2 = pie_chart(_heder_query, _data_query)
+            plt.close(chart2)
+            chart3 = line_chart(_heder_query, _data_query)
+            plt.close(chart3)
 
             page.views.append(
                 ft.View(

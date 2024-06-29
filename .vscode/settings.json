@@ -30,6 +30,7 @@
         "wedgeprops",
         "xlabel",
         "xlim",
+        "xticklabels",
         "xticks",
         "ylabel",
         "ylim",
