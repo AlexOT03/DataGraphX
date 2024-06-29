@@ -27,23 +27,36 @@ async def print_queries(src:str) -> list:
         return queries_list
 
 
-def bar_chart(headers, data) -> plt.Figure:
+def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
-    
+
+    x = np.array(["A", "B", "C", "D"])
+    y = np.array([3, 8, 1, 10])
+
+    ax.bar(x, y)
+
     return fig
 
 
-def pie_chart(headers, data) -> plt.Figure:
+def pie_chart(headers:list, data:list, type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
+
+    y = np.array([35, 25, 25, 15])
+
+    ax.pie(y)
 
     return fig
 
 
-def ssid_chart(headers, data) -> plt.Figure:
+def line_chart(headers:list, data:list, type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
+
+    ypoints = np.array([3, 8, 1, 10])
+
+    ax.plot(ypoints, linestyle='dotted')
 
     return fig
 
@@ -83,15 +96,16 @@ def calculate_mode(list:list):
     return round(moda, 2)
 
 
-def get_data_and_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list]:
+def get_data_type_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list, list]:
 
     with connection.cursor() as cursor:
         cursor.execute(f"USE {database}")
         cursor.execute(query)
         data = cursor.fetchall()
         headers = [columna[0] for columna in cursor.description]
+        data_types = [columna[1] for columna in cursor.description]
 
-    return headers, data
+    return headers, data, data_types
 
 
 async def main(page: ft.Page):
@@ -265,7 +279,7 @@ async def main(page: ft.Page):
             _id = int(data['query_id'])-1
             query_text = query_list[_id]
 
-            _heder_query, _data_query = get_data_and_headers(connection, "airbus380_acad", query_text['query'])
+            _heder_query, _data_query, _data_type = get_data_type_headers(connection, "airbus380_acad", query_text['query'])
 
             _columns:list = []
             for i in range(len(_heder_query)):
@@ -299,9 +313,9 @@ async def main(page: ft.Page):
             _median = calculate_median(median)
             _mode = calculate_mode(mode)
 
-            chart1 = bar_chart(_heder_query, _data_query)
-            chart2 = pie_chart(_heder_query, _data_query)
-            chart3 = ssid_chart(_heder_query, _data_query)
+            chart1 = bar_chart(_heder_query, _data_query, _data_type)
+            chart2 = pie_chart(_heder_query, _data_query, _data_type)
+            chart3 = line_chart(_heder_query, _data_query, _data_type)
 
             page.views.append(
                 ft.View(

@@ -5,6 +5,7 @@
         "arange",
         "autopct",
         "autotexts",
+        "categoria",
         "cmap",
         "Connetion",
         "expansionpanel",
@@ -13,6 +14,7 @@
         "gapminder",
         "GITHUB",
         "kaleido",
+        "linestyle",
         "linewidth",
         "ODBC",
         "parametro",
@@ -21,7 +23,9 @@
         "pyodbc",
         "setp",
         "sqls",
+        "ssid",
         "stackplot",
+        "subcategoria",
         "textprops",
         "wedgeprops",
         "xlabel",
@@ -29,6 +33,7 @@
         "xticks",
         "ylabel",
         "ylim",
+        "ypoints",
         "yticks"
     ]
 }
