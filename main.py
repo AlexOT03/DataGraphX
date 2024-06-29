@@ -26,134 +26,72 @@ async def print_queries(src:str) -> list:
 
         return queries_list
 
+
 def bar_chart(headers, data) -> plt.Figure:
+
     fig, ax = plt.subplots()
-    
-    etiquetas_x = headers[0]
-    
-    series_headers = headers[1:]
-    
-    etiquetas = [item[0] for item in data]
-    series = {header: [item[i + 1] for item in data] for i, header in enumerate(series_headers)}
-    
-    # Colores para las barras
-    colores = ['tab:red', 'tab:blue', 'tab:green', 'tab:orange', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
-    
-    for i, (serie, valores) in enumerate(series.items()):
-        ax.bar(etiquetas, valores, label=serie, color=colores[i % len(colores)])
-    
-    # Configurar etiquetas y título
-    ax.set_ylabel('Valores')
-    ax.set_title('Gráfica de Barras')
-    ax.legend(title='Series')
     
     return fig
 
 
-def pie_chart(headers, data):
-    fig, ax = plt.subplots()
-    if len(headers) < 2:
-        raise ValueError("headers debe contener al menos dos elementos.")
-    
-    # Usar el primer header como etiquetas del pastel
-    etiquetas = headers[0]
-    
-    # El segundo header como valores
-    valores = headers[1]
-    
-    # Extraer los datos y filtrar los no convertibles a float
-    etiquetas_pastel = []
-    valores_pastel = []
-    
-    for item in data:
-        try:
-            valor = float(item[1])
-            etiquetas_pastel.append(item[0])
-            valores_pastel.append(valor)
-        except ValueError:
-            return
-    
-    if not valores_pastel:
-        return
-    
-    
-    def func(pct, allvals):
-        absolute = int(np.round(pct / 100. * np.sum(allvals)))
-        return f"{pct:.1f}%\n({absolute:d})"
+def pie_chart(headers, data) -> plt.Figure:
 
-    
-    wedges, texts, autotexts = ax.pie(valores_pastel, autopct=lambda pct: func(pct, valores_pastel),
-                                      textprops=dict(color="w"))
-    
-    ax.legend(wedges, etiquetas_pastel,
-              title=etiquetas,
-              loc="center left",
-              bbox_to_anchor=(1, 0, 0.5, 1))
-    
-    plt.setp(autotexts, size=8, weight="bold")
-    
-    ax.set_title(f'Gráfica de {valores} por {etiquetas}')
-    
-    
+    fig, ax = plt.subplots()
+
     return fig
 
 
-def ssid_chart(headers, data):
-    
-    if len(headers) < 2:
-        raise ValueError("headers debe contener al menos dos elementos.")
-    
-    if any(len(item) < 2 for item in data):
-        raise ValueError("Cada fila de datos debe tener al menos dos elementos.")
-    
-    # Determinar si los valores tienen dos o tres elementos
-    is_extended_format = len(data[0]) == 3
+def ssid_chart(headers, data) -> plt.Figure:
 
-    # Usar el primer header como etiquetas del eje x
-    eje_x_header = headers[0]
+    fig, ax = plt.subplots()
+
+    return fig
+
+
+def calculate_mean(list:list):
+    suma = 0
+    for elemento in list:
+        suma += elemento
+    media = suma / len(list)
+
+    return round(media, 2)
+
+
+def calculate_median(list:list):
     
-    # Usar el segundo header como valores de la serie
-    serie_header = headers[1]
-    
-    # Extraer los datos
-    if is_extended_format:
-        eje_x_labels = [f'{item[0]} {item[1]}' for item in data]
-        serie = [item[2] for item in data]
+    lista_ordenada = sorted(list)
+    n = len(lista_ordenada)
+    if n % 2 == 0:
+        mediana = (lista_ordenada[n // 2] + lista_ordenada[n // 2 - 1]) / 2
     else:
-        eje_x_labels = [item[0] for item in data]
-        serie = [item[1] for item in data]
+        mediana = lista_ordenada[n // 2]
 
-    # Crear la gráfica
-    fig, ax = plt.subplots()
-    ax.stairs(serie, linewidth=2.5)
-    
-    # Agregar etiquetas a cada punto
-    for i, (label, y) in enumerate(zip(eje_x_labels, serie)):
-        ax.text(i, y, f'{y}', ha='center', va='bottom')
-
-    ax.set_title(f"Gráfica de Escalones ({serie_header})")
-    ax.set_xlabel(eje_x_header)
-    ax.set_xticks(range(len(eje_x_labels)))
-    ax.set_xticklabels(eje_x_labels, rotation=45, ha='right')
-    ax.set_xlim(-0.5, len(serie) - 0.5)
-    ax.set_ylim(0, max(serie) + 1)
-    ax.set_yticks(np.arange(1, max(serie) + 1))
-
-    return fig
+    return round(mediana, 2)
 
 
-def query_data(connection:sql_server.Connection, database:str, query: str):
+def calculate_mode(list:list):
+
+    frecuencia = {}
+    for numero in list:
+        if numero in frecuencia:
+            frecuencia[numero] += 1
+        else:
+            frecuencia[numero] = 1
+
+    moda = max(frecuencia, key=frecuencia.get)
+
+    return round(moda, 2)
+
+
+def get_data_and_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list]:
+
     with connection.cursor() as cursor:
         cursor.execute(f"USE {database}")
         cursor.execute(query)
-        return cursor.fetchall()
-
-def get_headers(connection:sql_server.Connection, database:str, query: str):
-    with connection.cursor() as cursor:
-        cursor.execute(f"USE {database}")
-        cursor.execute(query)
+        data = cursor.fetchall()
         headers = [columna[0] for columna in cursor.description]
-        return headers
+
+    return headers, data
 
 
 async def main(page: ft.Page):
@@ -327,8 +265,7 @@ async def main(page: ft.Page):
             _id = int(data['query_id'])-1
             query_text = query_list[_id]
 
-            _data_query:list = query_data(connection, "airbus380_acad", query_text['query'])
-            _heder_query:list = get_headers(connection, "airbus380_acad", query_text['query'])
+            _heder_query, _data_query = get_data_and_headers(connection, "airbus380_acad", query_text['query'])
 
             _columns:list = []
             for i in range(len(_heder_query)):
@@ -348,10 +285,23 @@ async def main(page: ft.Page):
                 )
 
                 table_data.rows.append(_row)
+            
+            mean:list = []
+            median:list = []
+            mode:list = []
+
+            for element in _data_query:
+                mean.append(element[-1])
+                median.append(element[-1])
+                mode.append(element[-1])
+            
+            _mean = calculate_mean(mean)
+            _median = calculate_median(median)
+            _mode = calculate_mode(mode)
 
             chart1 = bar_chart(_heder_query, _data_query)
-            # chart2 = pie_chart(_heder_query, _data_query)
-            # chart3 = ssid_chart(_heder_query, _data_query)
+            chart2 = pie_chart(_heder_query, _data_query)
+            chart3 = ssid_chart(_heder_query, _data_query)
 
             page.views.append(
                 ft.View(
@@ -375,7 +325,7 @@ async def main(page: ft.Page):
                             controls=[
                                 ft.Column(
                                     controls=[
-                                        ft.Text(value="Query structure", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+                                        ft.Text(value=f"Query structure Num {query_text['id']}", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                         ft.Container(
                                             content=ft.Column(
                                                 controls=[
@@ -414,16 +364,16 @@ async def main(page: ft.Page):
                                                     icon=ft.icons.PIE_CHART,
                                                     content=ft.Column(
                                                         controls=[
-                                                            # MatplotlibChart(chart2, expand=True)
+                                                            MatplotlibChart(chart2, expand=True)
                                                         ]
                                                     ),
                                                 ),
                                                 ft.Tab(
-                                                    text="Area Chart",
+                                                    text="Line Chart",
                                                     icon=ft.icons.SSID_CHART,
                                                     content=ft.Column(
                                                         controls=[
-                                                            # MatplotlibChart(chart3, expand=True)
+                                                            MatplotlibChart(chart3, expand=True)
                                                         ]
                                                     ),
                                                 ),
@@ -442,6 +392,14 @@ async def main(page: ft.Page):
                                 ft.Column(
                                     controls=[
                                         ft.Text(value="Data of the query", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+                                        ft.Row(
+                                            controls=[
+                                                ft.Text(value=f"Mean: {_mean}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Median: {_median}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Mode: {_mode}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                            ],
+                                        ),
+                                        ft.Text(value=f"Total rows: {len(_data_query)}", style=ft.TextThemeStyle.BODY_MEDIUM),
                                         table_data,
                                     ],
                                     scroll=ft.ScrollMode.AUTO,
