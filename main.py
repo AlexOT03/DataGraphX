@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import re
+import time
 
 matplotlib.use("svg")
 
@@ -27,7 +28,10 @@ async def print_queries(src:str) -> list:
         return queries_list
 
 
-def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
+def bar_chart(headers:list, data:list, data_type:list) -> tuple[plt.Figure, float]:
+
+    start_time = time.time()
+
     fig, ax = plt.subplots()
     bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
@@ -48,10 +52,15 @@ def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
 
-    return fig
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    return fig, elapsed_time
 
 
-def pie_chart(headers:list, data:list) -> plt.Figure:
+def pie_chart(headers:list, data:list) -> tuple[plt.Figure, float]:
+
+    start_time = time.time()
 
     fig, ax = plt.subplots()
 
@@ -68,10 +77,15 @@ def pie_chart(headers:list, data:list) -> plt.Figure:
     ax.set_title(f"{headers[-1]} by {headers[0]}")
     plt.setp(autotexts, size=8, weight="bold")
 
-    return fig
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    return fig, elapsed_time
 
 
-def line_chart(headers:list, data:list, data_type:list) -> plt.Figure:
+def line_chart(headers:list, data:list, data_type:list) -> tuple[plt.Figure, float]:
+
+    start_time = time.time()
 
     fig, ax = plt.subplots()
 
@@ -92,7 +106,10 @@ def line_chart(headers:list, data:list, data_type:list) -> plt.Figure:
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
 
-    return fig
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
+    return fig, elapsed_time
 
 
 def calculate_mean(list:list):
@@ -101,7 +118,7 @@ def calculate_mean(list:list):
         suma += elemento
     media = suma / len(list)
 
-    return round(media, 2)
+    return media
 
 
 def calculate_median(list:list):
@@ -113,7 +130,7 @@ def calculate_median(list:list):
     else:
         mediana = lista_ordenada[n // 2]
 
-    return round(mediana, 2)
+    return mediana
 
 
 def calculate_mode(list:list):
@@ -127,28 +144,41 @@ def calculate_mode(list:list):
 
     moda = max(frecuencia, key=frecuencia.get)
 
-    return round(moda, 2)
+    return moda
 
 
-def get_data_type_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list, list]:
+def get_data_type_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list, list, float]:
 
+    start_time = time.time()
     with connection.cursor() as cursor:
         cursor.execute(f"USE {database}")
         cursor.execute(query)
         data = cursor.fetchall()
         headers = [columna[0] for columna in cursor.description]
         data_types = [columna[1] for columna in cursor.description]
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
 
-    return headers, data, data_types
+    return headers, data, data_types, elapsed_time
 
 
 async def main(page: ft.Page):
     page.title = "DataGraphX"
     page.scroll = ft.ScrollMode.ADAPTIVE
+
     connection:sql_server.Connection = None
     query_list:list = []
 
-
+    dlg_modal = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Something went wrong"),
+        content=ft.Text("The connection failed. Please check the credentials and try again."),
+        actions=[
+            ft.TextButton("Ok", on_click=lambda e: page.close(dlg_modal)),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END,
+    )
     panel_list = ft.ExpansionPanelList(
         elevation=5,
     )
@@ -191,6 +221,10 @@ async def main(page: ft.Page):
     )
     button_theme:ft.IconButton = ft.IconButton(
         icon=ft.icons.LIGHT_MODE,
+    )
+    button_info:ft.IconButton = ft.IconButton(
+        icon=ft.icons.INFO,
+        on_click=lambda e: page.open(dlg_modal),
     )
 
 
@@ -278,19 +312,18 @@ async def main(page: ft.Page):
                                 ft.Text(value="DataGraphX", theme_style=ft.TextThemeStyle.DISPLAY_LARGE),
                                 ft.Image(src="./assets/icon.png", width=50, height=50, fit=ft.ImageFit.CONTAIN),
                             ],
-                            expand=True,
                             alignment=ft.MainAxisAlignment.CENTER,
+                            vertical_alignment=ft.VerticalAlignment.CENTER,
+                            expand=True
                         ),
                         ft.Container(
                             ft.Column(
                                 controls=[
-                                    ft.Divider(),
                                     dropdown_driver,
                                     text_server,
                                     checkbox_windows_auth,
                                     text_username,
                                     text_password,
-                                    ft.Divider(),
                                     ft.Row(
                                         controls=[
                                             button_connect,
@@ -302,7 +335,7 @@ async def main(page: ft.Page):
                                 ],
                                 alignment=ft.MainAxisAlignment.CENTER,
                             ),
-                            padding=ft.padding.only(top=20, right=180, bottom=20, left=180),
+                            padding=ft.padding.only(top=20, right=180, bottom=50, left=180),
                         ),
                     ],
                 ),
@@ -317,7 +350,7 @@ async def main(page: ft.Page):
             median:list = []
             mode:list = []
 
-            _heder_query, _data_query, _data_type = get_data_type_headers(connection, "airbus380_acad", query_text['query'])
+            _heder_query, _data_query, _data_type, _query_time = get_data_type_headers(connection, "airbus380_acad", query_text['query'])
 
             _columns:list = []
             for i in range(len(_heder_query)):
@@ -347,12 +380,14 @@ async def main(page: ft.Page):
             _median = calculate_median(median)
             _mode = calculate_mode(mode)
 
-            chart1 = bar_chart(_heder_query, _data_query, _data_type)
+            chart1, chart1_time = bar_chart(_heder_query, _data_query, _data_type)
             plt.close(chart1)
-            chart2 = pie_chart(_heder_query, _data_query)
+            chart2, chart2_time = pie_chart(_heder_query, _data_query)
             plt.close(chart2)
-            chart3 = line_chart(_heder_query, _data_query, _data_type)
+            chart3, chart3_time = line_chart(_heder_query, _data_query, _data_type)
             plt.close(chart3)
+
+            total_chart_time = chart1_time + chart2_time + chart3_time
 
             page.views.append(
                 ft.View(
@@ -407,7 +442,8 @@ async def main(page: ft.Page):
                                                     content=ft.Column(
                                                         controls=[
                                                             MatplotlibChart(chart1, expand=True)
-                                                        ]
+                                                        ],
+                                                        expand=True
                                                     ),
                                                 ),
                                                 ft.Tab(
@@ -416,7 +452,8 @@ async def main(page: ft.Page):
                                                     content=ft.Column(
                                                         controls=[
                                                             MatplotlibChart(chart2, expand=True)
-                                                        ]
+                                                        ],
+                                                        expand=True
                                                     ),
                                                 ),
                                                 ft.Tab(
@@ -425,7 +462,8 @@ async def main(page: ft.Page):
                                                     content=ft.Column(
                                                         controls=[
                                                             MatplotlibChart(chart3, expand=True)
-                                                        ]
+                                                        ],
+                                                        expand=True
                                                     ),
                                                 ),
                                             ],
@@ -445,15 +483,30 @@ async def main(page: ft.Page):
                                         ft.Text(value="Data of the query", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                         ft.Row(
                                             controls=[
-                                                ft.Text(value=f"Mean: {_mean}", style=ft.TextThemeStyle.BODY_MEDIUM),
-                                                ft.Text(value=f"Median: {_median}", style=ft.TextThemeStyle.BODY_MEDIUM),
-                                                ft.Text(value=f"Mode: {_mode}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Mean: {_mean:.2f}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Median: {_median:.2f}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Mode: {_mode:.2f}", style=ft.TextThemeStyle.BODY_MEDIUM),
                                             ],
                                         ),
-                                        ft.Text(value=f"Total rows: {len(_data_query)}", style=ft.TextThemeStyle.BODY_MEDIUM),
-                                        table_data,
+                                        ft.Container(
+                                            content=ft.Column(
+                                                controls=[
+                                                    table_data,
+                                                ],
+                                                scroll=ft.ScrollMode.AUTO,
+                                            ),
+                                            expand=True,
+                                            padding=ft.padding.only(left=5, right=5),
+                                        ),
+                                        ft.Divider(),
+                                        ft.Row(
+                                            controls=[
+                                                ft.Text(value=f"Total rows: {len(_data_query)}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Query execution time: {_query_time:.2f}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Chart's creation time: {total_chart_time:.2f}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                            ]
+                                        )
                                     ],
-                                    scroll=ft.ScrollMode.AUTO,
                                     expand=True
                                 )
                             ],
@@ -494,21 +547,32 @@ async def main(page: ft.Page):
 
 
     async def connect_to_sql_server(driver: str, server: str, windows_auth:bool, user: str, password: str) -> sql_server.Connection:
-        if windows_auth:
-            return sql_server.connect(driver=driver, server=server, trusted_connection="yes")
-        else:
-            return sql_server.connect(driver=driver, server=server, user=user, password=password)
+        try:
+            if windows_auth:
+                return sql_server.connect(driver=driver, server=server, trusted_connection="yes")
+            else:
+                return sql_server.connect(driver=driver, server=server, user=user, password=password)
+            
+        except Exception as e:
+            return None
     
 
     async def submit_connection(e: ft.ControlEvent) -> None:
         nonlocal connection
+
+        if connection is not None:
+            connection.close()
+
         connection = await connect_to_sql_server(dropdown_driver.value, text_server.value, checkbox_windows_auth.value, text_username.value, text_password.value)
 
         if connection and connection is not None:
             page.go("/")
         
         else:
-            connection.close()
+            if connection is not None:
+                connection.close()
+
+            page.open(dlg_modal)
 
 
     def view_pop(view) -> None:
