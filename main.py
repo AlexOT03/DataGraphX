@@ -27,11 +27,19 @@ async def print_queries(src:str) -> list:
         return queries_list
 
 
-def bar_chart(headers: list, data: list) -> plt.Figure:
+def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
     fig, ax = plt.subplots()
     bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
-    x_header = np.array([element[0] for element in data])
+    index:int = 0
+    if len(headers) == 3:
+        if data_type[0] == data_type[1]:
+            if data[0][0] == data[1][0]:
+                index = 1
+            else:
+                index = 0
+
+    x_header = np.array([element[index] for element in data])
     y_data = np.array([element[-1] for element in data])
 
     ax.bar(x_header, y_data, color=bar_colors[:len(headers)])
@@ -39,12 +47,6 @@ def bar_chart(headers: list, data: list) -> plt.Figure:
     ax.set_xlabel(f'{headers[0]}')
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
-
-    # Configura los ticks en el eje x
-    ax.set_xticks(np.arange(len(x_header)))
-
-    # Rotar los labels del eje x en 45 grados
-    ax.set_xticklabels(x_header, rotation=45, ha='right')
 
     return fig
 
@@ -69,11 +71,19 @@ def pie_chart(headers:list, data:list) -> plt.Figure:
     return fig
 
 
-def line_chart(headers:list, data:list) -> plt.Figure:
+def line_chart(headers:list, data:list, data_type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
 
-    x_header = np.array([element[0] for element in data])
+    index:int = 0
+    if len(headers) == 3:
+        if data_type[0] == data_type[1]:
+            if data[0][0] == data[1][0]:
+                index = 1
+            else:
+                index = 0
+
+    x_header = np.array([element[index] for element in data])
     y_data = np.array([element[-1] for element in data])
 
     ax.plot(x_header, y_data)
@@ -81,12 +91,6 @@ def line_chart(headers:list, data:list) -> plt.Figure:
     ax.set_xlabel(f'{headers[0]}')
     ax.set_ylabel(f'{headers[-1]}')
     ax.set_title(f'{headers[-1]} by {headers[0]}')
-
-    # Configura los ticks en el eje x
-    ax.set_xticks(np.arange(len(x_header)))
-
-    # Rotar los labels del eje x en 45 grados
-    ax.set_xticklabels(x_header, rotation=45, ha='right')
 
     return fig
 
@@ -343,11 +347,11 @@ async def main(page: ft.Page):
             _median = calculate_median(median)
             _mode = calculate_mode(mode)
 
-            chart1 = bar_chart(_heder_query, _data_query)
+            chart1 = bar_chart(_heder_query, _data_query, _data_type)
             plt.close(chart1)
             chart2 = pie_chart(_heder_query, _data_query)
             plt.close(chart2)
-            chart3 = line_chart(_heder_query, _data_query)
+            chart3 = line_chart(_heder_query, _data_query, _data_type)
             plt.close(chart3)
 
             page.views.append(
