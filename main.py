@@ -30,11 +30,15 @@ async def print_queries(src:str) -> list:
 def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
+    bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
-    x = np.array(["A", "B", "C", "D"])
-    y = np.array([3, 8, 1, 10])
+    x_header = np.array([element[0] for element in data])
+    y_data = np.array([element[-1] for element in data])
 
-    ax.bar(x, y)
+    ax.bar(x_header, y_data, color=bar_colors[:len(headers)])
+
+    ax.set_ylabel(f'{headers[-1]}')
+    ax.set_title(f'{headers[-1]} by {headers[0]}')
 
     return fig
 
@@ -42,10 +46,14 @@ def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
 def pie_chart(headers:list, data:list, type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
+    bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
-    y = np.array([35, 25, 25, 15])
+    x_header = np.array([element[0] for element in data])
+    y_data = np.array([element[-1] for element in data])
 
-    ax.pie(y)
+    ax.pie(y_data, labels=x_header)
+
+    ax.set_title(f'{headers[-1]} by {headers[0]}')
 
     return fig
 
@@ -54,9 +62,13 @@ def line_chart(headers:list, data:list, type:list) -> plt.Figure:
 
     fig, ax = plt.subplots()
 
-    ypoints = np.array([3, 8, 1, 10])
+    x_header = np.array([element[0] for element in data])
+    y_data = np.array([element[-1] for element in data])
 
-    ax.plot(ypoints, linestyle='dotted')
+    ax.plot(x_header, y_data)
+
+    ax.set_ylabel(f'{headers[-1]}')
+    ax.set_title(f'{headers[-1]} by {headers[0]}')
 
     return fig
 
