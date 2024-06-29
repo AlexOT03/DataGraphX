@@ -26,95 +26,120 @@ async def print_queries(src:str) -> list:
 
         return queries_list
 
-def bar_chart(data_test):
-    # make data:
-    x2 = 0.5 + np.arange(8)
-    y2 = [4.8, 5.5, 3.5, 4.6, 6.5, 6.6, 2.6, 3.0]
-    bar_labels = ["red", "blue", "_red", "orange", "yellow", "orange", "yellow", "orange"]
-    colors = ["tab:red", "tab:blue", "tab:red", "tab:orange", "tab:blue", "tab:orange", "tab:cyan", "tab:orange"]
 
-    # plot
-    figure, axles = plt.subplots()
+def bar_chart(headers:list, data:list, data_type:list) -> plt.Figure:
+    fig, ax = plt.subplots()
+    bar_colors = ['tab:blue', 'tab:orange', 'tab:green', 'tab:red', 'tab:purple', 'tab:brown', 'tab:pink', 'tab:gray', 'tab:olive', 'tab:cyan']
 
-    axles.bar(x2, y2, width=1, edgecolor="white", linewidth=0.7, label=bar_labels, color=colors)
+    index:int = 0
+    if len(headers) == 3:
+        if data_type[0] == data_type[1]:
+            if data[0][0] == data[1][0]:
+                index = 1
+            else:
+                index = 0
 
-    axles.set(xlim=(0, 8), xticks=np.arange(1, 8),
-           ylim=(0, 8), yticks=np.arange(1, 8))
+    x_header = np.array([element[index] for element in data])
+    y_data = np.array([element[-1] for element in data])
+
+    ax.bar(x_header, y_data, color=bar_colors[:len(headers)])
+
+    ax.set_xlabel(f'{headers[0]}')
+    ax.set_ylabel(f'{headers[-1]}')
+    ax.set_title(f'{headers[-1]} by {headers[0]}')
+
+    return fig
+
+
+def pie_chart(headers:list, data:list) -> plt.Figure:
+
+    fig, ax = plt.subplots()
+
+    labels = [element[0] for element in data]
+    y_data = np.array([element[-1] for element in data])
+
+    total = sum(y_data)
+    percentages = [round((value / total) * 100, 1) for value in y_data]
+
+    wedge_patches, texts, autotexts = ax.pie(
+        y_data, labels=labels, autopct=lambda pct: f"{pct:.1f}%"
+    )
     
-    axles.set_ylabel("fruit supply")
-    axles.set_title("Fruit supply by kind and color")
-    axles.legend(title="Fruit color")
-    
-    return figure
-
-
-def pie_chart(data_test):
-    def func(pct, allvals):
-        absolute = int(np.round(pct/100.*np.sum(allvals)))
-        return f"{pct:.1f}%\n({absolute:d} g)"
-
-    figure, ax = plt.subplots()
-
-    recipe = ["375 g flour",
-              "75 g sugar",
-              "250 g butter",
-              "300 g berries"]
-
-    data = [float(x.split()[0]) for x in recipe]
-    ingredients = [x.split()[-1] for x in recipe]
-
-    wedges, texts, autotexts = ax.pie(data, autopct=lambda pct: func(pct, data),
-                                  textprops=dict(color="w"))
-
-    ax.legend(wedges, ingredients,
-              title="Ingredients",
-              loc="center left",
-              bbox_to_anchor=(1, 0, 0.5, 1))
-
+    ax.set_title(f"{headers[-1]} by {headers[0]}")
     plt.setp(autotexts, size=8, weight="bold")
 
-    ax.set_title("Matplotlib bakery: A pie")
+    return fig
+
+
+def line_chart(headers:list, data:list, data_type:list) -> plt.Figure:
+
+    fig, ax = plt.subplots()
+
+    index:int = 0
+    if len(headers) == 3:
+        if data_type[0] == data_type[1]:
+            if data[0][0] == data[1][0]:
+                index = 1
+            else:
+                index = 0
+
+    x_header = np.array([element[index] for element in data])
+    y_data = np.array([element[-1] for element in data])
+
+    ax.plot(x_header, y_data)
+
+    ax.set_xlabel(f'{headers[0]}')
+    ax.set_ylabel(f'{headers[-1]}')
+    ax.set_title(f'{headers[-1]} by {headers[0]}')
+
+    return fig
+
+
+def calculate_mean(list:list):
+    suma = 0
+    for elemento in list:
+        suma += elemento
+    media = suma / len(list)
+
+    return round(media, 2)
+
+
+def calculate_median(list:list):
     
-    
-    return figure
+    lista_ordenada = sorted(list)
+    n = len(lista_ordenada)
+    if n % 2 == 0:
+        mediana = (lista_ordenada[n // 2] + lista_ordenada[n // 2 - 1]) / 2
+    else:
+        mediana = lista_ordenada[n // 2]
+
+    return round(mediana, 2)
 
 
-def area_chart(data_test):
-    # make data
-    year = [1950, 1960, 1970, 1980, 1990, 2000, 2010, 2018]
-    population_by_continent = {
-        'Africa': [.228, .284, .365, .477, .631, .814, 1.044, 1.275],
-        'the Americas': [.340, .425, .519, .619, .727, .840, .943, 1.006],
-        'Asia': [1.394, 1.686, 2.120, 2.625, 3.202, 3.714, 4.169, 4.560],
-        'Europe': [.220, .253, .276, .295, .310, .303, .294, .293],
-        'Oceania': [.012, .015, .019, .022, .026, .031, .036, .039],
-    }
-    
-    # plot
-    figure, axles = plt.subplots()
-    
-    axles.stackplot(year, population_by_continent.values(),
-             labels=population_by_continent.keys(), alpha=0.8)
-    axles.legend(loc='upper left', reverse=True)
-    axles.set_title('World population')
-    axles.set_xlabel('Year')
-    axles.set_ylabel('Number of people (billions)')
+def calculate_mode(list:list):
 
-    return figure
+    frecuencia = {}
+    for numero in list:
+        if numero in frecuencia:
+            frecuencia[numero] += 1
+        else:
+            frecuencia[numero] = 1
+
+    moda = max(frecuencia, key=frecuencia.get)
+
+    return round(moda, 2)
 
 
-def query_data(connection:sql_server.Connection, database:str, query: str):
+def get_data_type_headers(connection: sql_server.Connection, database: str, query: str) -> tuple[list, list, list]:
+
     with connection.cursor() as cursor:
         cursor.execute(f"USE {database}")
         cursor.execute(query)
-        return cursor.fetchall()
-
-def get_headers(connection:sql_server.Connection, database:str, query: str):
-    with connection.cursor() as cursor:
-        cursor.execute(f"USE {database}")
-        cursor.execute(query)
+        data = cursor.fetchall()
         headers = [columna[0] for columna in cursor.description]
-        return headers
+        data_types = [columna[1] for columna in cursor.description]
+
+    return headers, data, data_types
 
 
 async def main(page: ft.Page):
@@ -284,15 +309,15 @@ async def main(page: ft.Page):
             )
 
         if _page == "/details":
-            chart1 = bar_chart("test")
-            chart2 = pie_chart("test")
-            chart3 = area_chart("test")
 
             _id = int(data['query_id'])-1
             query_text = query_list[_id]
 
-            _data_query:list = query_data(connection, "airbus380_acad", query_text['query'])
-            _heder_query:list = get_headers(connection, "airbus380_acad", query_text['query'])
+            mean:list = []
+            median:list = []
+            mode:list = []
+
+            _heder_query, _data_query, _data_type = get_data_type_headers(connection, "airbus380_acad", query_text['query'])
 
             _columns:list = []
             for i in range(len(_heder_query)):
@@ -303,6 +328,10 @@ async def main(page: ft.Page):
             )
 
             for element in _data_query:
+                mean.append(element[-1])
+                median.append(element[-1])
+                mode.append(element[-1])
+
                 _cells:list = []
                 for j in range(len(_heder_query)):
                     _cells.append(ft.DataCell(ft.Text(f"{element[j]}")))
@@ -312,6 +341,18 @@ async def main(page: ft.Page):
                 )
 
                 table_data.rows.append(_row)
+
+
+            _mean = calculate_mean(mean)
+            _median = calculate_median(median)
+            _mode = calculate_mode(mode)
+
+            chart1 = bar_chart(_heder_query, _data_query, _data_type)
+            plt.close(chart1)
+            chart2 = pie_chart(_heder_query, _data_query)
+            plt.close(chart2)
+            chart3 = line_chart(_heder_query, _data_query, _data_type)
+            plt.close(chart3)
 
             page.views.append(
                 ft.View(
@@ -335,7 +376,7 @@ async def main(page: ft.Page):
                             controls=[
                                 ft.Column(
                                     controls=[
-                                        ft.Text(value="Query structure", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+                                        ft.Text(value=f"Query structure Num {query_text['id']}", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
                                         ft.Container(
                                             content=ft.Column(
                                                 controls=[
@@ -379,8 +420,8 @@ async def main(page: ft.Page):
                                                     ),
                                                 ),
                                                 ft.Tab(
-                                                    text="Area Chart",
-                                                    icon=ft.icons.AREA_CHART,
+                                                    text="Line Chart",
+                                                    icon=ft.icons.SSID_CHART,
                                                     content=ft.Column(
                                                         controls=[
                                                             MatplotlibChart(chart3, expand=True)
@@ -402,6 +443,14 @@ async def main(page: ft.Page):
                                 ft.Column(
                                     controls=[
                                         ft.Text(value="Data of the query", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
+                                        ft.Row(
+                                            controls=[
+                                                ft.Text(value=f"Mean: {_mean}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Median: {_median}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                                ft.Text(value=f"Mode: {_mode}", style=ft.TextThemeStyle.BODY_MEDIUM),
+                                            ],
+                                        ),
+                                        ft.Text(value=f"Total rows: {len(_data_query)}", style=ft.TextThemeStyle.BODY_MEDIUM),
                                         table_data,
                                     ],
                                     scroll=ft.ScrollMode.AUTO,
